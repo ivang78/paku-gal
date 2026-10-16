@@ -82,22 +82,25 @@ void frame() {
 }
 
 static void draw_score(void) {
-    char number[8], max_number[8];
-    gal_gotoxy(0, 0); gal_puts("                                ");
+    char number[8];
     itoa(score, number, 10);
-    itoa(max_score, max_number, 10);
-    gal_gotoxy(0, 0); gal_puts("SCORE: "); gal_puts(number);
-    gal_gotoxy(22, 0); gal_puts("HI: "); gal_puts(max_number);
+    gal_gotoxy(7, 0); gal_puts(number);
 }
 
 /* Draw all maze rows */
 static void draw_maze(void) {
     int i;
+	char max_number[8];
 
     for (i = 0; i < 32; i++) {
         z80_bpoke(SCREEN_ADDR + (7 << 5) + i, 140);
         z80_bpoke(SCREEN_ADDR + (10 << 5) + i, 140);
     }
+    gal_gotoxy(0, 0); gal_puts("                                ");
+    gal_gotoxy(0, 0); gal_puts("SCORE: ");
+    gal_gotoxy(22, 0); gal_puts("HI: "); 
+    itoa(max_score, max_number, 10);
+    gal_gotoxy(26, 0); gal_puts(max_number);
 }
 
 /* Draw actors on top. */
