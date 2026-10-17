@@ -18,19 +18,19 @@ static const unsigned char paku_left_a[4]   = {142, 185, 172, 159};
 static const unsigned char paku_left_b[4]   = {174, 185, 175, 159};
 static const unsigned char paku_right_a[4]  = {182, 141, 175, 156};
 static const unsigned char paku_right_b[4]  = {182, 157, 175, 159};
-static const unsigned char pill_act[4]  	= {180, 148, 175, 133};
+static const unsigned char pill_act[4]  	= {184, 182, 175, 159};
 
 static unsigned char dots[CELLS];
 static int paku_pos, paku_dir, paku_phase;
 static int ghost_pos, ghost_phase, ghost_accum;
 static int ghost_active;
-static int pill_pos, pill_active, pill_wait;
+static int pill_pos, pill_active, pill_wait, pill_already_eaten;
 static int frightened;
 static unsigned int score, max_score;
 
 
 static int random_between(int lo, int hi) {
-    return lo + (rand() % (hi - lo + 1));
+    return lo + (rand() * (hi - lo)) / RAND_MAX;
 }
 
 static void put_sprite(int cell, const unsigned char *sprite) {
@@ -133,6 +133,7 @@ static void reset_segment(void) {
     int i;
     for (i = 0; i < CELLS; i++) dots[i] = 0;
     pill_active = 0;
+	pill_already_eaten = 0;
     pill_wait = random_between(2, 5);
 }
 
@@ -150,14 +151,14 @@ static void spawn_pill(void) {
     /* Try random positions first, then use a deterministic fallback. */
     for (i = 0; i < CELLS * 2; i++) {
         p = random_between(0, CELLS - 1);
-        if (maze_distance(p, paku_pos) >= 6) {
+        if (maze_distance(p, paku_pos) >= 4) {
             pill_pos = p;
             pill_active = 1;
             return;
         }
     }
     for (p = 0; p < CELLS; p++) {
-        if (maze_distance(p, paku_pos) >= 6) {
+        if (maze_distance(p, paku_pos) >= 4) {
             pill_pos = p;
             pill_active = 1;
             return;
@@ -240,12 +241,13 @@ static int play_game(void) {
         }
         if (pill_active && paku_pos == pill_pos) {
             pill_active = 0;
+			pill_already_eaten = 1;
             frightened = POWER_TURNS;
             pill_wait = random_between(2, 5);
             spawn_ghost();
 			ghost_spawned = 1;
         }
-        if (!pill_active) {
+        if (!pill_active && !pill_already_eaten) {
             if (pill_wait > 0) pill_wait--;
             if (pill_wait == 0) spawn_pill();
         }
@@ -297,9 +299,9 @@ static void draw_game_over(void) {
 int main(void) {
     int result;
     char key;
-    srand(z80_wpeek(RND_ADDR));
     max_score = 0;
     for (;;) {
+	    srand(z80_wpeek(RND_ADDR));
         gal_cls();
         frame();
         gal_cls();
