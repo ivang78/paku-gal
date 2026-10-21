@@ -14,7 +14,7 @@ static const unsigned char dot_sprite[4]    = {160, 144, 130, 129};
 static const unsigned char pill_sprite[4]   = {184, 182, 175, 159};
 static const unsigned char ghost_a[4]       = {190, 185, 159, 159};
 static const unsigned char ghost_b[4]       = {190, 185, 175, 175};
-static const unsigned char ghost_e[4]       = {8,   0,   8,   0};
+static const unsigned char ghost_e[4]       = {136, 136, 128, 128};
 static const unsigned char paku_left_a[4]   = {142, 185, 172, 159};
 static const unsigned char paku_left_b[4]   = {174, 185, 175, 159};
 static const unsigned char paku_right_a[4]  = {182, 141, 175, 156};
@@ -202,7 +202,6 @@ static void move_ghost_once(void) {
 }
 
 static void update_ghost(void) {
-    //if (!ghost_active) return;
     /* 11/10 gives the requested 10% speed advantage over Paku. */
     ghost_accum += 11;
     while (ghost_accum >= 10) {
@@ -261,22 +260,23 @@ static int play_game(void) {
             pill_active = 0;
 			pill_already_eaten = 1;
             frightened = POWER_TURNS;
-			ghost_active = 0;
-            //spawn_ghost();
-			//ghost_spawned = 1;
         }
         if (!pill_active && !pill_already_eaten) {
             spawn_pill();
         }
 
-        if (frightened > 0) frightened--;
-        if (!ghost_spawned) update_ghost();
+        if (frightened > 0) {
+			frightened--;
+		}
+        update_ghost();
 
         if (ghost_active && ghost_pos == paku_pos) {
             if (frightened > 0) {
+				ghost_active = 0;
                 score += 10;
-                if (score > max_score) max_score = score;
-                spawn_ghost();
+                if (score > max_score) {
+					max_score = score;
+				}
             } else {
                 draw_scene();
                 return 1;
