@@ -14,6 +14,7 @@ static const unsigned char dot_sprite[4]    = {160, 144, 130, 129};
 static const unsigned char pill_sprite[4]   = {184, 182, 175, 159};
 static const unsigned char ghost_a[4]       = {190, 185, 159, 159};
 static const unsigned char ghost_b[4]       = {190, 185, 175, 175};
+static const unsigned char ghost_e[4]       = {8,   0,   8,   0};
 static const unsigned char paku_left_a[4]   = {142, 185, 172, 159};
 static const unsigned char paku_left_b[4]   = {174, 185, 175, 159};
 static const unsigned char paku_right_a[4]  = {182, 141, 175, 156};
@@ -24,7 +25,7 @@ static unsigned char dots[CELLS];
 static int paku_pos, paku_dir, paku_phase;
 static int ghost_pos, ghost_phase, ghost_accum;
 static int ghost_active;
-static int pill_pos, pill_active, pill_wait, pill_already_eaten;
+static int pill_pos, pill_active, pill_already_eaten;
 static int frightened;
 static unsigned int score, max_score;
 
@@ -77,6 +78,16 @@ void frame() {
 	center_text(6, "SPACE - CHANGE DIRECTION");
 	center_text(8, "PRESS ENTER");	
 	center_text(9, "BY IVAN ILYICHEV 2026"); 
+
+	char pp[8], i, p;
+
+    /* Try random positions first, then use a deterministic fallback. */
+    for (i = 0; i < CELLS; i++) {
+        p = random_between(0, CELLS - 1);
+		itoa(p, pp, 10);
+		gal_gotoxy(0, i); gal_puts(pp);
+	}
+
 	do {
 	} while (getk() != 10);
 }
@@ -113,8 +124,11 @@ static void draw_scene(void) {
         else if (!pill_active || pill_pos != i) put_sprite(i, dot_sprite);
     }
     if (pill_active) put_sprite(pill_pos, pill_sprite);
-    if (ghost_active)
+    if (ghost_active) {
         put_sprite(ghost_pos, (ghost_phase == 0) ? ghost_a : ghost_b);
+	} else {
+        put_sprite(ghost_pos, ghost_e);
+	}
 
     if (paku_dir < 0)
         paku = (paku_phase == 0) ? paku_left_a : paku_left_b;
@@ -134,7 +148,6 @@ static void reset_segment(void) {
     for (i = 0; i < CELLS; i++) dots[i] = 0;
     pill_active = 0;
 	pill_already_eaten = 0;
-    pill_wait = random_between(2, 5);
 }
 
 /* Distance on the wrapping row of maze cells. */
@@ -170,21 +183,35 @@ static void spawn_pill(void) {
 /* A ghost always enters from the corner behind Paku's movement direction. */
 static void spawn_ghost(void) {
     ghost_active = 1;
-    ghost_pos = (paku_dir < 0) ? CELLS - 1 : 0;
     ghost_phase = 0;
     ghost_accum = 0;
 }
 
 static void move_ghost_once(void) {
-    if (ghost_pos > paku_pos) ghost_pos--;
-    else if (ghost_pos < paku_pos) ghost_pos++;
-    if (ghost_pos < 0) ghost_pos = 0;
-    if (ghost_pos >= CELLS) ghost_pos = CELLS - 1;
+	if (ghost_active) {
+		if (ghost_pos > paku_pos) ghost_pos--;
+		else if (ghost_pos < paku_pos) ghost_pos++;
+	} else {
+		if (ghost_pos <= CELLS / 2) ghost_pos--;
+		else if (ghost_pos > CELLS / 2) ghost_pos++;
+	}
+    if (ghost_pos < 0) { 
+		ghost_pos = 0;
+		if (!ghost_active) {
+			spawn_ghost();
+		}
+	}
+    if (ghost_pos >= CELLS) {
+		ghost_pos = CELLS - 1;
+		if (!ghost_active) {
+			spawn_ghost();
+		}
+	}
     ghost_phase ^= 1;
 }
 
 static void update_ghost(void) {
-    if (!ghost_active) return;
+    //if (!ghost_active) return;
     /* 11/10 gives the requested 10% speed advantage over Paku. */
     ghost_accum += 11;
     while (ghost_accum >= 10) {
@@ -225,7 +252,7 @@ static int play_game(void) {
 			if (key == KEY_DEL) return 0;
 			if (key == KEY_SPACE && dir_changed == 0) {
 				paku_dir = -paku_dir;
-				dir_changed = 3;
+				dir_changed = 2;
 			}
 		}
 
@@ -243,13 +270,12 @@ static int play_game(void) {
             pill_active = 0;
 			pill_already_eaten = 1;
             frightened = POWER_TURNS;
-            pill_wait = random_between(2, 5);
-            spawn_ghost();
-			ghost_spawned = 1;
+			ghost_active = 0;
+            //spawn_ghost();
+			//ghost_spawned = 1;
         }
         if (!pill_active && !pill_already_eaten) {
-            if (pill_wait > 0) pill_wait--;
-            if (pill_wait == 0) spawn_pill();
+            spawn_pill();
         }
 
         if (frightened > 0) frightened--;
