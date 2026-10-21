@@ -219,13 +219,13 @@ static int all_dots_eaten(void) {
 static int play_game(void) {
     char key;
 	int dir_changed = 0;
-	int ghost_spawned;
 	volatile unsigned int n;
     score = 0;
     paku_pos = 7; 
 	paku_dir = -1; 
 	paku_phase = 0;
     frightened = 0;
+	ghost_pos = CELLS - 1;
 	spawn_ghost();
     reset_segment();
 	draw_maze();
@@ -236,7 +236,6 @@ static int play_game(void) {
 		if (dir_changed > 0) {
 			dir_changed--;
 		}
-		ghost_spawned = 0;
 		for (n = 0; n < 80; n++) { 
 			key = getk();
 			if (key == KEY_DEL) return 0;
