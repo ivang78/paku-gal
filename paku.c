@@ -31,7 +31,7 @@ static unsigned int score, max_score;
 
 
 static int random_between(int lo, int hi) {
-    return lo + (rand() * (hi - lo)) / RAND_MAX;
+	return lo + (rand() / (RAND_MAX / (hi - lo)));
 }
 
 static void put_sprite(int cell, const unsigned char *sprite) {
@@ -78,15 +78,6 @@ void frame() {
 	center_text(6, "SPACE - CHANGE DIRECTION");
 	center_text(8, "PRESS ENTER");	
 	center_text(9, "BY IVAN ILYICHEV 2026"); 
-
-	char pp[8], i, p;
-
-    /* Try random positions first, then use a deterministic fallback. */
-    for (i = 0; i < CELLS; i++) {
-        p = random_between(0, CELLS - 1);
-		itoa(p, pp, 10);
-		gal_gotoxy(0, i); gal_puts(pp);
-	}
 
 	do {
 	} while (getk() != 10);
@@ -326,8 +317,8 @@ int main(void) {
     int result;
     char key;
     max_score = 0;
+    srand(z80_wpeek(RND_ADDR));
     for (;;) {
-	    srand(z80_wpeek(RND_ADDR));
         gal_cls();
         frame();
         gal_cls();
